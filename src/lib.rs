@@ -1,6 +1,7 @@
 // BabyJubJub elliptic curve implementation in Rust.
 // For LICENSE check https://github.com/arnaucube/babyjubjub-rs
 
+use std::ops;
 use ff::*;
 
 use poseidon_rs::Poseidon;
@@ -146,6 +147,11 @@ impl Point {
         }
     }
 
+    pub fn add_point(&self, p: &Point) -> Point {
+        let r: PointProjective = self.projective();
+        r.add(&p.projective()).affine()
+    }
+
     pub fn mul_scalar(&self, n: &BigInt) -> Point {
         let mut r: PointProjective = PointProjective {
             x: Fr::zero(),
@@ -182,6 +188,26 @@ impl Point {
             return true;
         }
         false
+    }
+}
+
+impl ops::Mul<Point> for BigInt {
+    type Output = Point;
+    fn mul(self, rhs: Point) -> Self::Output {
+        rhs.mul_scalar(&self)
+    }
+}
+
+impl ops::MulAssign<BigInt> for Point {
+    fn mul_assign(&mut self, rhs: BigInt) {
+        *self = self.mul_scalar(&rhs)
+    }
+}
+
+impl ops::Add<Point> for Point {
+    type Output = Point;
+    fn add(self, rhs: Point) -> Self::Output {
+        self.add_point(&rhs)
     }
 }
 
