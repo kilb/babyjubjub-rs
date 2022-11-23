@@ -449,17 +449,16 @@ impl PrivateKey {
     }
 }
 
-pub fn poseidon_hash(msgs: &[BigInt]) -> Result<BigInt, String> {
-    let mut inputs = Vec::new();
-    for msg in msgs {
+pub fn poseidon_hash(msgs: Vec<&BigInt>) -> Result<BigInt, String> {
+    let inputs: Result<Vec<Fr>, String> = msgs.into_iter().map(|msg| {
         if msg > &Q {
-            return Err("msg outside the Finite Field".to_string());
+            Err("msg outside the Finite Field".to_string())
+        } else {
+            Ok(Fr::from_str(&msg.to_string()).unwrap())
         }
-        let msg_fr: Fr = Fr::from_str(&msg.to_string()).unwrap();
-        inputs.push(msg_fr);
-    }
+    }).collect();
     
-    let h = POSEIDON.hash(inputs)?;
+    let h = POSEIDON.hash(inputs?)?;
     let h_b = BigInt::parse_bytes(to_hex(&h).as_bytes(), 16).unwrap();
     Ok(h_b)
 }
