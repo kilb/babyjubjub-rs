@@ -159,6 +159,10 @@ pub struct Point {
 }
 
 impl Point {
+    pub fn identity() -> Self {
+        Self { x: Fr::zero(), y: Fr::one() }
+    }
+
     pub fn projective(&self) -> PointProjective {
         PointProjective {
             x: self.x,
@@ -478,6 +482,10 @@ mod tests {
     use super::*;
     use ::hex;
     use rand::Rng;
+    #[test]
+    fn test_identity() {
+        assert_eq!(B8.clone() + Point::identity(), B8.clone());
+    }
     #[test]
     fn test_add_same_point() {
         let p: PointProjective = PointProjective {
