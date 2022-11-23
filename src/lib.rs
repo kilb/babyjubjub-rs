@@ -222,6 +222,27 @@ impl ops::Mul<Point> for BigInt {
     }
 }
 
+impl ops::Mul<&Point> for BigInt {
+    type Output = Point;
+    fn mul(self, rhs: &Point) -> Self::Output {
+        rhs.mul_scalar(&self)
+    }
+}
+
+impl ops::Mul<&Point> for &BigInt {
+    type Output = Point;
+    fn mul(self, rhs: &Point) -> Self::Output {
+        rhs.mul_scalar(self)
+    }
+}
+
+impl ops::Mul<Point> for &BigInt {
+    type Output = Point;
+    fn mul(self, rhs: Point) -> Self::Output {
+        rhs.mul_scalar(self)
+    }
+}
+
 impl ops::MulAssign<BigInt> for Point {
     fn mul_assign(&mut self, rhs: BigInt) {
         *self = self.mul_scalar(&rhs)
@@ -232,6 +253,13 @@ impl ops::Add<Point> for Point {
     type Output = Point;
     fn add(self, rhs: Point) -> Self::Output {
         self.add_point(&rhs)
+    }
+}
+
+impl ops::Add<&Point> for &Point {
+    type Output = Point;
+    fn add(self, rhs: &Point) -> Self::Output {
+        self.add_point(rhs)
     }
 }
 
