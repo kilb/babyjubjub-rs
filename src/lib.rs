@@ -213,6 +213,15 @@ impl Point {
         }
         false
     }
+
+    pub fn scalar_x(&self) -> BigInt {
+        BigInt::parse_bytes(to_hex(&self.x).as_bytes(), 16).unwrap()
+    }
+
+    pub fn scalar_y(&self) -> BigInt {
+        BigInt::parse_bytes(to_hex(&self.y).as_bytes(), 16).unwrap()
+    }
+
 }
 
 impl ops::Mul<Point> for BigInt {
