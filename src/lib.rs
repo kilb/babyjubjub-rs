@@ -45,7 +45,7 @@ lazy_static! {
             )
                 .unwrap(),
         };
-    pub static ref H: Point = Point {
+    pub static ref H8: Point = Point {
         x: Fr::from_str(
                 "19831748504994589132411367095598830179026033019934281486308313608100184114338",
             )
