@@ -35,13 +35,23 @@ lazy_static! {
         b"21888242871839275222246405745257275088548364400416034343698204186575808495617",10
     )
         .unwrap();
-    static ref B: Point = Point {
+    static ref G: Point = Point {
         x: Fr::from_str(
                 "995203441582195749578291179787384436505546430278305826713579947235728471134",
             )
             .unwrap(),
             y: Fr::from_str(
                 "5472060717959818805561601436314318772137091100104008585924551046643952123905",
+            )
+                .unwrap(),
+        };
+    static ref H: Point = Point {
+        x: Fr::from_str(
+                "19831748504994589132411367095598830179026033019934281486308313608100184114338",
+            )
+            .unwrap(),
+            y: Fr::from_str(
+                "18531793603621744047058458887759877023624393997479442351102766671063944083188",
             )
                 .unwrap(),
         };
@@ -334,11 +344,11 @@ impl PrivateKey {
         h[31] |= 0x40;
 
         let sk = BigInt::from_bytes_le(Sign::Plus, &h[..]);
-        sk
+        sk >> 3
     }
 
     pub fn public(&self) -> Point {
-        B.mul_scalar(&self.scalar_key())
+        B8.mul_scalar(&self.scalar_key())
     }
 
     pub fn sign(&self, msg: BigInt) -> Result<Signature, String> {
@@ -368,7 +378,7 @@ impl PrivateKey {
         let hm_input = vec![r_b8.x, r_b8.y, a.x, a.y, msg_fr];
         let hm = POSEIDON.hash(hm_input)?;
 
-        let mut s = self.scalar_key();
+        let mut s = &self.scalar_key() << 3;
         let hm_b = BigInt::parse_bytes(to_hex(&hm).as_bytes(), 16).unwrap();
         s = hm_b * s;
         s = r + s;
@@ -384,7 +394,7 @@ impl PrivateKey {
         let k = rng.gen_biguint(1024).to_bigint().unwrap();
 
         // r = k·G
-        let r = B.mul_scalar(&k);
+        let r = B8.mul_scalar(&k);
 
         // h = H(x, r, m)
         let pk = self.public();
@@ -395,6 +405,21 @@ impl PrivateKey {
         let s = k + &sk_scalar * &h;
         Ok((r, s))
     }
+}
+
+pub fn poseidon_hash(msgs: &[BigInt]) -> Result<BigInt, String> {
+    let mut inputs = Vec::new();
+    for msg in msgs {
+        if msg > &Q {
+            return Err("msg outside the Finite Field".to_string());
+        }
+        let msg_fr: Fr = Fr::from_str(&msg.to_string()).unwrap();
+        inputs.push(msg_fr);
+    }
+    
+    let h = POSEIDON.hash(inputs)?;
+    let h_b = BigInt::parse_bytes(to_hex(&h).as_bytes(), 16).unwrap();
+    Ok(h_b)
 }
 
 pub fn schnorr_hash(pk: &Point, msg: BigInt, c: &Point) -> Result<BigInt, String> {
@@ -410,7 +435,7 @@ pub fn schnorr_hash(pk: &Point, msg: BigInt, c: &Point) -> Result<BigInt, String
 
 pub fn verify_schnorr(pk: Point, m: BigInt, r: Point, s: BigInt) -> Result<bool, String> {
     // sG = s·G
-    let sg = B.mul_scalar(&s);
+    let sg = B8.mul_scalar(&s);
 
     // r + h · x
     let h = schnorr_hash(&pk, m, &r)?;
@@ -452,11 +477,6 @@ mod tests {
     use super::*;
     use ::hex;
     use rand::Rng;
-    #[test]
-    fn test_base_point() {
-        let r = B.mul_scalar(&8.to_bigint().unwrap());
-        assert_eq!(r, B8.clone());
-    }
     #[test]
     fn test_add_same_point() {
         let p: PointProjective = PointProjective {
