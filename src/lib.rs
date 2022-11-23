@@ -35,7 +35,7 @@ lazy_static! {
         b"21888242871839275222246405745257275088548364400416034343698204186575808495617",10
     )
         .unwrap();
-    static ref G: Point = Point {
+    pub static ref G: Point = Point {
         x: Fr::from_str(
                 "995203441582195749578291179787384436505546430278305826713579947235728471134",
             )
@@ -45,7 +45,7 @@ lazy_static! {
             )
                 .unwrap(),
         };
-    static ref H: Point = Point {
+    pub static ref H: Point = Point {
         x: Fr::from_str(
                 "19831748504994589132411367095598830179026033019934281486308313608100184114338",
             )
@@ -55,7 +55,7 @@ lazy_static! {
             )
                 .unwrap(),
         };
-    static ref B8: Point = Point {
+    pub static ref B8: Point = Point {
         x: Fr::from_str(
                "5299619240641551281634865583518297030282874472190772894086521144482721001553",
            )
@@ -65,19 +65,19 @@ lazy_static! {
             )
                 .unwrap(),
     };
-    static ref ORDER: Fr = Fr::from_str(
+    pub static ref ORDER: Fr = Fr::from_str(
         "21888242871839275222246405745257275088614511777268538073601725287587578984328",
     )
         .unwrap();
 
     // SUBORDER = ORDER >> 3
-    static ref SUBORDER: BigInt = BigInt::parse_bytes(
+    pub static ref SUBORDER: BigInt = BigInt::parse_bytes(
         b"2736030358979909402780800718157159386076813972158567259200215660948447373041",
         10,
     )
         .unwrap();
 
-    static ref POSEIDON: poseidon_rs::Poseidon = Poseidon::new();
+    pub static ref POSEIDON: poseidon_rs::Poseidon = Poseidon::new();
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -313,6 +313,7 @@ pub fn decompress_signature(b: &[u8; 64]) -> Result<Signature, String> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PrivateKey {
     key: [u8; 32],
 }
