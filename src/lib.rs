@@ -207,6 +207,12 @@ impl Point {
         r
     }
 
+    pub fn negative(&self) -> Point {
+        let mut r = self.clone();
+        r.x.negate();
+        r
+    }
+
     pub fn equals(&self, p: Point) -> bool {
         if self.x == p.x && self.y == p.y {
             return true;
@@ -518,6 +524,15 @@ mod tests {
     use super::*;
     use ::hex;
     use rand::Rng;
+    #[test]
+    fn test_negative() {
+        let key1 = new_key();
+        let p1 = key1.public();
+        let key2 = new_key();
+        let p2 = key2.public();
+        let p3 = &p1 + &p2;
+        assert_eq!(p1, p3 + p2.negative());
+    }
     #[test]
     fn test_identity() {
         assert_eq!(B8.clone() + Point::identity(), B8.clone());
