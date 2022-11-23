@@ -278,6 +278,20 @@ impl ops::Add<&Point> for &Point {
     }
 }
 
+impl ops::Add<Point> for &Point {
+    type Output = Point;
+    fn add(self, rhs: Point) -> Self::Output {
+        self.add_point(&rhs)
+    }
+}
+
+impl ops::Add<&Point> for Point {
+    type Output = Point;
+    fn add(self, rhs: &Point) -> Self::Output {
+        self.add_point(rhs)
+    }
+}
+
 pub fn test_bit(b: &[u8], i: usize) -> bool {
     b[i / 8] & (1 << (i % 8)) != 0
 }
