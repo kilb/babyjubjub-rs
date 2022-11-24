@@ -159,6 +159,32 @@ pub struct Point {
 }
 
 impl Point {
+    pub fn from_y(y: BigInt, sign: bool) -> Result<Point, String> {
+        if y >= Q.clone() {
+            return Err("y outside the Finite Field over R".to_string());
+        }
+        let one: BigInt = One::one();
+    
+        // x^2 = (1 - y^2) / (a - d * y^2) (mod p)
+        let den = utils::modinv(
+            &utils::modulus(
+                &(&A_BIG.clone() - utils::modulus(&(&D_BIG.clone() * (&y * &y)), &Q)),
+                &Q,
+            ),
+            &Q,
+        )?;
+        let mut x: BigInt = utils::modulus(&((one - utils::modulus(&(&y * &y), &Q)) * den), &Q);
+        x = utils::modsqrt(&x, &Q)?;
+    
+        if sign && (x <= (&Q.clone() >> 1)) || (!sign && (x > (&Q.clone() >> 1))) {
+            x *= -(1.to_bigint().unwrap());
+        }
+        x = utils::modulus(&x, &Q);
+        let x_fr: Fr = Fr::from_str(&x.to_string()).unwrap();
+        let y_fr: Fr = Fr::from_str(&y.to_string()).unwrap();
+        Ok(Point { x: x_fr, y: y_fr })
+    }
+
     pub fn identity() -> Self {
         Self { x: Fr::zero(), y: Fr::one() }
     }
@@ -305,29 +331,7 @@ pub fn decompress_point(bb: [u8; 32]) -> Result<Point, String> {
         b[31] &= 0x7F;
     }
     let y: BigInt = BigInt::from_bytes_le(Sign::Plus, &b[..]);
-    if y >= Q.clone() {
-        return Err("y outside the Finite Field over R".to_string());
-    }
-    let one: BigInt = One::one();
-
-    // x^2 = (1 - y^2) / (a - d * y^2) (mod p)
-    let den = utils::modinv(
-        &utils::modulus(
-            &(&A_BIG.clone() - utils::modulus(&(&D_BIG.clone() * (&y * &y)), &Q)),
-            &Q,
-        ),
-        &Q,
-    )?;
-    let mut x: BigInt = utils::modulus(&((one - utils::modulus(&(&y * &y), &Q)) * den), &Q);
-    x = utils::modsqrt(&x, &Q)?;
-
-    if sign && (x <= (&Q.clone() >> 1)) || (!sign && (x > (&Q.clone() >> 1))) {
-        x *= -(1.to_bigint().unwrap());
-    }
-    x = utils::modulus(&x, &Q);
-    let x_fr: Fr = Fr::from_str(&x.to_string()).unwrap();
-    let y_fr: Fr = Fr::from_str(&y.to_string()).unwrap();
-    Ok(Point { x: x_fr, y: y_fr })
+    Point::from_y(y, sign)
 }
 
 #[cfg(not(feature = "aarch64"))]
