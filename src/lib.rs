@@ -159,8 +159,8 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn from_y(y: BigInt, sign: bool) -> Result<Point, String> {
-        if y >= Q.clone() {
+    pub fn from_y(y: &BigInt, sign: bool) -> Result<Point, String> {
+        if y >= &Q {
             return Err("y outside the Finite Field over R".to_string());
         }
         let one: BigInt = One::one();
@@ -168,12 +168,12 @@ impl Point {
         // x^2 = (1 - y^2) / (a - d * y^2) (mod p)
         let den = utils::modinv(
             &utils::modulus(
-                &(&A_BIG.clone() - utils::modulus(&(&D_BIG.clone() * (&y * &y)), &Q)),
+                &(&A_BIG.clone() - utils::modulus(&(&D_BIG.clone() * (y * y)), &Q)),
                 &Q,
             ),
             &Q,
         )?;
-        let mut x: BigInt = utils::modulus(&((one - utils::modulus(&(&y * &y), &Q)) * den), &Q);
+        let mut x: BigInt = utils::modulus(&((one - utils::modulus(&(y * y), &Q)) * den), &Q);
         x = utils::modsqrt(&x, &Q)?;
     
         if sign && (x <= (&Q.clone() >> 1)) || (!sign && (x > (&Q.clone() >> 1))) {
@@ -331,7 +331,7 @@ pub fn decompress_point(bb: [u8; 32]) -> Result<Point, String> {
         b[31] &= 0x7F;
     }
     let y: BigInt = BigInt::from_bytes_le(Sign::Plus, &b[..]);
-    Point::from_y(y, sign)
+    Point::from_y(&y, sign)
 }
 
 #[cfg(not(feature = "aarch64"))]
