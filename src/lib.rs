@@ -399,7 +399,7 @@ fn blh(b: &[u8]) -> Vec<u8> {
     hash.to_vec()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Signature {
     pub r_b8: Point,
     pub s: BigInt,
@@ -430,7 +430,7 @@ pub fn decompress_signature(b: &[u8; 64]) -> Result<Signature, String> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PrivateKey {
     key: [u8; 32],
 }
@@ -603,8 +603,6 @@ mod tests {
         let deserialized: Point = serde_json::from_str(&serialized).unwrap();
 
         assert_eq!(p1, deserialized);
-
-
     }
 
     #[test]
