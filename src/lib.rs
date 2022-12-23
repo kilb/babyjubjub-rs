@@ -2,7 +2,11 @@
 // For LICENSE check https://github.com/arnaucube/babyjubjub-rs
 
 use std::ops;
+use std::fmt;
 use ff::*;
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
+use serde::de::{Visitor, SeqAccess, Error};
+use serde::ser::SerializeSeq;
 
 use poseidon_rs::Poseidon;
 pub type Fr = poseidon_rs::Fr; // alias
@@ -156,6 +160,54 @@ impl PointProjective {
 pub struct Point {
     pub x: Fr,
     pub y: Fr,
+}
+
+impl Serialize for Point {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let data = self.compress();
+        let mut seq = serializer.serialize_seq(Some(data.len()))?;
+        for e in &data {
+            seq.serialize_element(e)?;
+        }
+        seq.end()
+    }
+}
+
+struct SeqDeserializer;
+impl<'de> Visitor<'de> for SeqDeserializer {
+    type Value = [u8; 32];
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("u8 sequence.")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        let mut new_obj = [0u8; 32];
+        let mut i = 0;
+        while let Some(value) = seq.next_element()? {
+            new_obj[i] = value;
+            i += 1;
+        }
+
+        Ok(new_obj)
+    }
+}
+
+impl<'de> Deserialize<'de> for Point {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let data = deserializer.deserialize_seq(SeqDeserializer)?;
+        decompress_point(data).map_err(|_| Error::custom(format!(
+            "can not convert!")))
+    }
 }
 
 impl Point {
@@ -347,7 +399,7 @@ fn blh(b: &[u8]) -> Vec<u8> {
     hash.to_vec()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Signature {
     pub r_b8: Point,
     pub s: BigInt,
@@ -378,7 +430,7 @@ pub fn decompress_signature(b: &[u8; 64]) -> Result<Signature, String> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrivateKey {
     key: [u8; 32],
 }
@@ -542,6 +594,19 @@ mod tests {
     use super::*;
     use ::hex;
     use rand::Rng;
+
+    #[test]
+    fn test_serde() {
+        let key1 = new_key();
+        let p1 = key1.public();
+        let serialized = serde_json::to_string(&p1).unwrap();
+        let deserialized: Point = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(p1, deserialized);
+
+
+    }
+
     #[test]
     fn test_negative() {
         let key1 = new_key();
