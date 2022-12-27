@@ -228,7 +228,7 @@ impl Point {
         let mut x: BigInt = utils::modulus(&((one - utils::modulus(&(y * y), &Q)) * den), &Q);
         x = utils::modsqrt(&x, &Q)?;
     
-        if sign && (x <= (&Q.clone() >> 1)) || (!sign && (x > (&Q.clone() >> 1))) {
+        if  ((&x & BigInt::one()) == BigInt::one()) != sign {
             x *= -(1.to_bigint().unwrap());
         }
         x = utils::modulus(&x, &Q);
@@ -279,7 +279,7 @@ impl Point {
         let (_, y_bytes) = y_big.to_bytes_le();
         let len = min(y_bytes.len(), r.len());
         r[..len].copy_from_slice(&y_bytes[..len]);
-        if x_big > (&Q.clone() >> 1) {
+        if (x_big & BigInt::one()) == BigInt::one() {
             r[31] |= 0x80;
         }
         r
@@ -787,11 +787,22 @@ mod tests {
         let p_comp = p.compress();
         assert_eq!(
             hex::encode(p_comp),
-            "53b81ed5bffe9545b54016234682e7b2f699bd42a5e9eae27ff4051bc698ce85"
+            "53b81ed5bffe9545b54016234682e7b2f699bd42a5e9eae27ff4051bc698ce05"
         );
         let p2 = decompress_point(p_comp).unwrap();
         assert_eq!(p.x, p2.x);
         assert_eq!(p.y, p2.y);
+    }
+
+    #[test]
+    fn test_point_compress_decompress_rand() {
+        for _ in 0..10 {
+            let sk = new_key();
+            let pk = sk.public();
+            let data = pk.compress();
+            let pk2 = decompress_point(data).unwrap();
+            assert_eq!(pk, pk2);
+        }
     }
 
     #[test]
